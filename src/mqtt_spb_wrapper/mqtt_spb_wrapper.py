@@ -257,9 +257,9 @@ class MqttSpbEntity:
         """
 
         if self._spb_eon_device_name is None:  # EoN type
-            payload = getNodeBirthPayload()
+            payload = getNodeBirthPayload(self.entity_name)
         else:  # Device
-            payload = getDeviceBirthPayload()
+            payload = getDeviceBirthPayload(self.entity_name)
 
         # Attributes
         if not self.attributes.is_empty():
@@ -309,7 +309,7 @@ class MqttSpbEntity:
     def serialize_payload_data(self, send_all=False):
 
         # Get a new payload object to add metrics to it.
-        payload = getDdataPayload()
+        payload = getDdataPayload(self.entity_name)
 
         # Iterate for each data field.
         for item in self.data.values:
@@ -457,7 +457,7 @@ class MqttSpbEntity:
             topic = "spBv1.0/" + self.spb_group_name + "/STATE/" + self._spb_eon_name
             self._mqtt.will_set(topic, "OFFLINE".encode("utf-8"), 0, True)  # Set message
         else:  # Normal node
-            payload = getNodeDeathPayload()
+            payload = getNodeDeathPayload(self.entity_name)
             payload_bytes = bytearray(payload.SerializeToString())
             if self._spb_eon_device_name is None:  # EoN
                 topic = "spBv1.0/" + self.spb_group_name + "/NDEATH/" + self._spb_eon_name
@@ -496,7 +496,7 @@ class MqttSpbEntity:
                     topic = "spBv1.0/" + self.spb_group_name + "/STATE/" + self._spb_eon_name
                     self._mqtt.publish(topic, "OFFLINE".encode("utf-8"), 0, False)
                 else:  # Normal node
-                    payload = getNodeDeathPayload()
+                    payload = getNodeDeathPayload(self.entity_name)
                     payload_bytes = bytearray(payload.SerializeToString())
                     if self._spb_eon_device_name is None:  # EoN
                         topic = "spBv1.0/" + self.spb_group_name + "/NDEATHx/" + self._spb_eon_name
@@ -879,7 +879,7 @@ class MqttSpbEntityScada(MqttSpbEntity):
             return False
 
         # PAYLOAD
-        payload = getDdataPayload()
+        payload = getDdataPayload(self.entity_name)
 
         # Add the list of commands to the payload metrics
         for k in commands:
@@ -913,7 +913,7 @@ class MqttSpbEntityScada(MqttSpbEntity):
             return False
 
         # PAYLOAD
-        payload = getDdataPayload()
+        payload = getDdataPayload(self.entity_name)
 
         # Add the list of commands to the payload metrics
         for k in commands:
