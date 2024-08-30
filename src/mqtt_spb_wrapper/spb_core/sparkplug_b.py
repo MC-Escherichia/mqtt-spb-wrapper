@@ -93,7 +93,7 @@ class ParameterDataType:
 # Always request this before requesting the Node Birth Payload
 ######################################################################
 def getNodeDeathPayload(eon=""):
-    payload = Payload(eon)
+    payload = Payload()
     addMetric(payload, "bdSeq", None, MetricDataType.Int64, getBdSeqNum(eon))
     return payload
 ######################################################################
@@ -106,7 +106,7 @@ def getNodeBirthPayload(eon=""):
     global bdSeqs
     seqNums[eon] = 0
     seqNum = 0
-    payload = Payload(eon)
+    payload = Payload()
     payload.timestamp = int(round(time.time() * 1000))
     payload.seq = getSeqNum(eon)
     bdSeqs[eon] = 0
@@ -118,7 +118,7 @@ def getNodeBirthPayload(eon=""):
 # Get the DBIRTH payload
 ######################################################################
 def getDeviceBirthPayload(eon=""):
-    payload = Payload(eon)
+    payload = Payload()
     payload.timestamp = int(round(time.time() * 1000))
     payload.seq = getSeqNum(eon)
     return payload
@@ -345,8 +345,8 @@ def getSeqNum(eon=""):
 
     # print("seqNum: " + str(retVal))
     seqNums[eon] += 1
-    if seqNum[eon] == 256:
-        seqNum[eon] = 0
+    if seqNums[eon] == 256:
+        seqNums[eon] = 0
     return retVal
 ######################################################################
 
