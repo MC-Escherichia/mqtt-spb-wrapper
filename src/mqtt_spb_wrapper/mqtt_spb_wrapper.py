@@ -264,19 +264,19 @@ class MqttSpbEntity:
         # Attributes
         if not self.attributes.is_empty():
             for item in self.attributes.values:
-                name = "ATTR/" + item.name
+                name = item.name
                 addMetric(payload, name, None, self._spb_data_type(item.value), item.value, item.timestamp)
 
         # Data
         if not self.data.is_empty():
             for item in self.data.values:
-                name = "DATA/" + item.name
+                name = item.name
                 addMetric(payload, name, None, self._spb_data_type(item.value), item.value, item.timestamp)
 
         # Commands
         if not self.commands.is_empty():
             for item in self.commands.values:
-                name = "CMD/" + item.name
+                name = item.name
                 addMetric(payload, name, None, self._spb_data_type(item.value), item.value, item.timestamp)
 
         payload_bytes = bytearray(payload.SerializeToString())
@@ -292,17 +292,19 @@ class MqttSpbEntity:
             # Iterate over the metrics to update the data fields
             for field in payload.get('metrics', []):
 
-                if field['name'].startswith("ATTR/"):
-                    field['name'] = field['name'][5:]
-                    self.attributes.set_value(field['name'], field['value'], field['timestamp'])  # update field
+                # if field['name'].startswith("ATTR/"):
+                #     field['name'] = field['name'][5:]
+                #     self.attributes.set_value(field['name'], field['value'], field['timestamp'])  # update field
 
-                elif field['name'].startswith("CMD/"):
-                    field['name'] = field['name'][4:]
-                    self.commands.set_value(field['name'], field['value'], field['timestamp'])  # update field
+                # elif field['name'].startswith("CMD/"):
+                #     field['name'] = field['name'][4:]
+                #     self.commands.set_value(field['name'], field['value'], field['timestamp'])  # update field
 
-                elif field['name'].startswith("DATA/"):
-                    field['name'] = field['name'][5:]
-                    self.data.set_value(field['name'], field['value'], field['timestamp'])  # update field
+                # elif field['name'].startswith("DATA/"):
+                #     field['name'] = field['name'][5:]
+                #     self.data.set_value(field['name'], field['value'], field['timestamp'])  # update field
+                #new version:
+                self.attributes.set_value(field['name'], field['value'], field['timestamp'])  # update field
 
         return payload
 
@@ -349,7 +351,7 @@ class MqttSpbEntity:
         if self._entity_is_scada:
             topic = "spBv1.0/" + self.spb_group_name + "/STATE/" + self._spb_eon_name
             self._loopback_topic = topic
-            self._mqtt.publish(topic, "ONLINE".encode("utf-8"), QoS, True)
+            self._mqtt.publish(topic, "ONLINE".encode("utf-8"), QoS, False)
             logger.info("%s - Published STATE BIRTH message " % (self._entity_domain))
             return
 
@@ -360,7 +362,7 @@ class MqttSpbEntity:
         else:
             topic = "spBv1.0/" + self.spb_group_name + "/DBIRTH/" + self._spb_eon_name + "/" + self._spb_eon_device_name
         self._loopback_topic = topic
-        self._mqtt.publish(topic, payload_bytes, QoS, True)
+        self._mqtt.publish(topic, payload_bytes, QoS, False)
 
         logger.info("%s - Published BIRTH message" % (self._entity_domain))
 
