@@ -17,7 +17,7 @@ homepage = "https://github.com/javier-fg/mqtt-spb-wrapper"
 
 [tool.poetry.dependencies]
 python = ">=3.7"
-paho-mqtt = "1.6.1"
+paho-mqtt = "^2.1.0"
 protobuf = "3.20.3"
 
 [build-system]
