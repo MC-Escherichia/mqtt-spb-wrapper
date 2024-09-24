@@ -772,23 +772,102 @@ class MqttSpbEntity:
 
             return True
 
-
-class MqttSpbEntityDevice(MqttSpbEntity):
-
-    def __init__(self, spb_group_name, spb_eon_name, spb_eon_device_name,
-                 debug_info=False,
-                 filter_cmd_msg=True):
-        # Initialized the object ( parent class ) with Device_id as None - Configuring it as edge node
-        super().__init__(spb_group_name, spb_eon_name, spb_eon_device_name, debug_info, filter_cmd_msg)
-
-
-class MqttSpbEntityEdgeNode(MqttSpbEntity):
+class MqttSpbEntityEdgeNodeWithDevices(MqttSpbEntity):
 
     def __init__(self, spb_group_name, spb_eon_name, debug_info=False):
 
         # Initialized the object ( parent class ) with Device_id as None - Configuring it as edge node
         super().__init__(spb_group_name, spb_eon_name, None, debug_info)
+        self.devices = []
+        
+    def add_device(self, device):
+        if not isinstance(device, MqttSpbEntityDevice):
+            raise ValueError("a must an object of class MqttSpbEntityDevice")
+        else:
+            self.devices.append(device)
+    
+    #overriding MqttSpbEntity's connect() to join all devices under edge node in one connection
+    def connect(self,
+                host='localhost',
+                port=1883,
+                user="",
+                password="",
+				use_tls=False,
+                tls_ca_path="",
+                tls_cert_path="",
+                tls_key_path="",
+                tls_insecure=False,
+                timeout=5):
 
+        # If we are already connected, then exit
+        if self.is_connected():
+            return True
+
+        # MQTT Client configuration
+        if self._mqtt is None:
+            self._mqtt = mqtt.Client(userdata=self)
+
+        self._mqtt.on_connect = self._mqtt_on_connect
+        self._mqtt.on_disconnect = self._mqtt_on_disconnect
+        self._mqtt.on_message = self._mqtt_on_message
+
+        if user != "":
+            self._mqtt.username_pw_set(user, password)
+
+        # If client certificates are provided
+        if tls_ca_path and tls_cert_path and tls_key_path:
+            logger.debug("Setting CA client certificates")
+
+            if tls_insecure:
+                logger.debug("Setting CA client certificates - IMPORTANT CA insecure mode ( use only for testing )")
+                import ssl
+                self._mqtt.tls_set(ca_certs=tls_ca_path, certfile=tls_cert_path, keyfile=tls_key_path, cert_reqs=ssl.CERT_NONE)
+                self._mqtt.tls_insecure_set(True)
+            else:
+                logger.debug("Setting CA client certificates")
+                self._mqtt.tls_set(ca_certs=tls_ca_path, certfile=tls_cert_path, keyfile=tls_key_path)
+
+        #If only CA is proviced.
+        elif tls_ca_path:
+            logger.debug("Setting CA certificate")
+            self._mqtt.tls_set(ca_certs=tls_ca_path)
+
+        # If TLS is enabled
+        else:
+            if use_tls:
+                self._mqtt.tls_set()    # Enable TLS encryption
+
+        # Entity DEATH message - last will message
+        payload = getNodeDeathPayload()
+        payload_bytes = bytearray(payload.SerializeToString())
+        if self._spb_eon_device_name is None:  # EoN
+            topic = "spBv1.0/" + self.spb_group_name + "/NDEATH/" + self._spb_eon_name
+        
+        if not self.devices == []:
+            for device in self.devices:
+                topic = "spBv1.0/" + self.spb_group_name + "/DDEATH/" + self._spb_eon_name + "/" + self._spb_eon_device_name
+                self._mqtt.will_set(topic, payload_bytes, 0, True)  # Set message
+        
+        # MQTT Connect
+        logger.info("%s - Trying to connect MQTT server %s:%d" % (self._entity_domain, host, port))
+        try:
+            self._mqtt.connect(host, port)
+        except Exception as e:
+            logger.warning("%s - Could not connect to MQTT server (%s)" % (self._entity_domain, str(e)))
+            return False
+
+        self._mqtt.loop_start()  # Start MQTT background task
+        time.sleep(0.1)
+
+        # Wait some time to get connected
+        _timeout = time.time() + timeout
+        while not self.is_connected() and _timeout > time.time():
+            time.sleep(0.1)
+
+        # Return if we connected successfully
+        return self.is_connected()
+            
+            
     def publish_command_device(self, spb_eon_device_name, commands):
 
         if not self.is_connected():  # If not connected
@@ -822,6 +901,58 @@ class MqttSpbEntityEdgeNode(MqttSpbEntity):
 
         logger.warning("%s - Could not publish COMMAND message to %s" % (self._entity_domain, topic))
         return False
+
+
+#need to modify so that any creations of devices do NOT make its own connection to an MQTT server
+class MqttSpbEntityDevice(MqttSpbEntity):
+
+    def __init__(self, spb_group_name, spb_eon_name, spb_eon_device_name,
+                 debug_info=False,
+                 filter_cmd_msg=True):
+        # Initialized the object ( parent class ) with Device_id as None - Configuring it as edge node
+        super().__init__(spb_group_name, spb_eon_name, spb_eon_device_name, debug_info, filter_cmd_msg)
+
+
+# class MqttSpbEntityEdgeNode(MqttSpbEntity):
+
+#     def __init__(self, spb_group_name, spb_eon_name, debug_info=False):
+
+#         # Initialized the object ( parent class ) with Device_id as None - Configuring it as edge node
+#         super().__init__(spb_group_name, spb_eon_name, None, debug_info)
+
+#     def publish_command_device(self, spb_eon_device_name, commands):
+
+#         if not self.is_connected():  # If not connected
+#             logger.warning(
+#                 "%s - Could not send publish_command_device(), not connected to MQTT server" % self._entity_domain)
+#             return False
+
+#         if not isinstance(commands, dict):  # If no data commands as dictionary
+#             logger.warning(
+#                 "%s - Could not send publish_command_device(), commands not provided or not valid. Please provide a dictionary of command:value" % self._entity_domain)
+#             return False
+
+#         # Get a new payload object, to add metrics
+#         payload = getDdataPayload()
+
+#         # Add the list of commands to the payload metrics
+#         for k in commands:
+#             addMetric(payload, k, None, self._spb_data_type(commands[k]), commands[k])
+
+#         # Send payload if there is new data
+#         topic = "spBv1.0/" + self.spb_group_name + "/DCMD/" + self._spb_eon_name + "/" + spb_eon_device_name
+
+#         if payload.metrics:
+#             payload_bytes = bytearray(payload.SerializeToString())
+#             self._loopback_topic = topic
+#             self._mqtt.publish(topic, payload_bytes, 0, False)
+
+#             logger.info("%s - Published COMMAND message to %s" % (self._entity_domain, topic))
+
+#             return True
+
+#         logger.warning("%s - Could not publish COMMAND message to %s" % (self._entity_domain, topic))
+#         return False
 
 
 class MqttSpbEntityApplication(MqttSpbEntityDevice):
