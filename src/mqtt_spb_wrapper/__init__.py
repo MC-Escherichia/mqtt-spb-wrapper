@@ -8,6 +8,6 @@ from .mqtt_spb_wrapper import MqttSpbEntityDevice
 from .mqtt_spb_wrapper import MqttSpbEntityEdgeNode
 from .mqtt_spb_wrapper import MqttSpbEntityScada
 from .mqtt_spb_wrapper import MqttSpbEntityApplication
-
+from .mqtt_spb_wrapper import MqttSpbEntityEdgeNodeWithDevices
 
 
