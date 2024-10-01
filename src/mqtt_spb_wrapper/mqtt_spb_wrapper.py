@@ -295,19 +295,19 @@ class MqttSpbEntity:
             # Iterate over the metrics to update the data fields
             for field in payload.get('metrics', []):
 
-                # if field['name'].startswith("ATTR/"):
-                #     field['name'] = field['name'][5:]
-                #     self.attributes.set_value(field['name'], field['value'], field['timestamp'])  # update field
+                if field['name'].startswith("ATTR/"):
+                    field['name'] = field['name'][5:]
+                    self.attributes.set_value(field['name'], field['value'], field['timestamp'])  # update field
 
-                # elif field['name'].startswith("CMD/"):
-                #     field['name'] = field['name'][4:]
-                #     self.commands.set_value(field['name'], field['value'], field['timestamp'])  # update field
+                elif field['name'].startswith("CMD/"):
+                    field['name'] = field['name'][4:]
+                    self.commands.set_value(field['name'], field['value'], field['timestamp'])  # update field
 
-                # elif field['name'].startswith("DATA/"):
-                #     field['name'] = field['name'][5:]
-                #     self.data.set_value(field['name'], field['value'], field['timestamp'])  # update field
+                elif field['name'].startswith("DATA/"):
+                    field['name'] = field['name'][5:]
+                    self.data.set_value(field['name'], field['value'], field['timestamp'])  # update field
                 #new version:
-                self.attributes.set_value(field['name'], field['value'], field['timestamp'])  # update field
+                # self.attributes.set_value(field['name'], field['value'], field['timestamp'])  # update field
 
         return payload
 
@@ -890,10 +890,10 @@ class MqttSpbEntityEdgeNodeWithDevices(MqttSpbEntity):
         if self._spb_eon_device_name is None:  # EoN
             topic = "spBv1.0/" + self.spb_group_name + "/NDEATH/" + self._spb_eon_name
             self._mqtt.will_set(topic, payload_bytes, 0, True)
-        if not self.devices == []:
-            for device in self.devices:
-                topic = "spBv1.0/" + device.spb_group_name + "/DDEATH/" + device._spb_eon_name + "/" + device._spb_eon_device_name
-                self._mqtt.will_set(topic, payload_bytes, 0, True)  # Set message
+        # if not self.devices == []:
+        #     for device in self.devices:
+        #         topic = "spBv1.0/" + device.spb_group_name + "/DDEATH/" + device._spb_eon_name + "/" + device._spb_eon_device_name
+        #         self._mqtt.will_set(topic, payload_bytes, 0, True)  # Set message
         
         # MQTT Connect
         logger.info("%s - Trying to connect MQTT server %s:%d" % (self._entity_domain, host, port))
@@ -925,20 +925,22 @@ class MqttSpbEntityEdgeNodeWithDevices(MqttSpbEntity):
 
             # Send the DEATH message
             if not skip_death_publish:
+                
                 #start getting ddeath messages for devices
                 for device in self.devices:
                     
-                    payload = getNodeDeathPayload()
+                    payload = getNodeDeathPayload(lwtexist=True)
                     payload_bytes = bytearray(payload.SerializeToString())
                     topic = "spBv1.0/" + device.spb_group_name + "/DDEATH/" + device._spb_eon_name + "/" + device._spb_eon_device_name
                     self._mqtt.publish(topic, payload_bytes, 0, False)  # Set message
                 
                 #get ndeath from edgenode
-                payload = getNodeDeathPayload()
+                payload = getNodeDeathPayload(lwtexist=True, isedgenode=True)
+                # payload.seq = 0
                 payload_bytes = bytearray(payload.SerializeToString())
                 if not self.edgenode == None:
                     topic = "spBv1.0/" + self.spb_group_name + "/NDEATH/" + self._spb_eon_name
-                    self._mqtt.publish(topic, payload_bytes, 0, False)  # Set message
+                    self._mqtt.publish(topic, payload_bytes, 0, False)  # Set message 
                 
 
             # Disconnect from MQTT broker
