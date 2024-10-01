@@ -79,9 +79,15 @@ class ParameterDataType:
 ######################################################################
 # Always request this before requesting the Node Birth Payload
 ######################################################################
-def getNodeDeathPayload():
+def getNodeDeathPayload(lwtexist = False, isedgenode = False):
+    bdseq = getBdSeqNum()
+    if lwtexist:
+        bdseq -= 1
+    if isedgenode:
+        bdseq = getBdSeqNum(reset=True)
     payload = sparkplug_b_pb2.Payload()
-    addMetric(payload, "bdSeq", None, MetricDataType.Int32, getBdSeqNum())
+    payload.seq = getSeqNum()
+    addMetric(payload, "bdSeq", None, MetricDataType.Int64, bdseq)
     return payload
 ######################################################################
 
@@ -95,7 +101,7 @@ def getNodeBirthPayload():
     payload = sparkplug_b_pb2.Payload()
     payload.timestamp = int(round(time.time() * 1000))
     payload.seq = getSeqNum()
-    addMetric(payload, "bdSeq", None, MetricDataType.Int32, bdSeq - 1)
+    addMetric(payload, "bdSeq", None, MetricDataType.Int64, bdSeq - 1)
     return payload
 ######################################################################
 
@@ -405,8 +411,10 @@ def getSeqNum():
 ######################################################################
 # Helper method for getting the next birth/death sequence number
 ######################################################################
-def getBdSeqNum():
+def getBdSeqNum(reset = False):
     global bdSeq
+    if reset:
+        bdSeq = 0
     retVal = bdSeq
     # print("bdSeqNum: " + str(retVal))
     bdSeq += 1
