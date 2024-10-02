@@ -804,6 +804,11 @@ class MqttSpbEntityEdgeNodeWithDevices(MqttSpbEntity):
                                spb_eon_name,
                                debug_info, edge_node_w_devices=True) # we want to infer an edge node is already created
         
+        #we will set a tag equivalency between this class instance and the edge node's
+        self.edgenode.attributes = self.attributes
+        self.edgenode.data = self.data
+        self.edgenode.commands = self.commands
+        
     def add_device(self, device):
         if not isinstance(device, MqttSpbEntityDevice):
             raise ValueError("a must an object of class MqttSpbEntityDevice")
