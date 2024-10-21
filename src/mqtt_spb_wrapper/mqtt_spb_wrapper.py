@@ -3,7 +3,8 @@ import datetime
 import logging
 import paho.mqtt.client as mqtt
 from google.protobuf.json_format import MessageToDict
-
+import json
+import traceback
 from .spb_core import getDdataPayload, getNodeDeathPayload, getNodeBirthPayload, getDeviceBirthPayload
 from .spb_core import getSeqNum, getBdSeqNum
 from .spb_core import addMetric, MetricDataType
@@ -105,8 +106,13 @@ class MqttSpbPayload:
         pb_payload = Payload()
 
         try:
-            pb_payload.ParseFromString(payload_data)
-            payload = MessageToDict(pb_payload)  # Convert it to DICT for easy handeling
+            logger.info(payload_data)
+            logger.info(len(payload_data))
+            try: #tests if the payload is a encoded json rather than encoded string
+                payload = json.loads(payload_data)
+            except:
+                pb_payload.ParseFromString(payload_data)
+                payload = MessageToDict(pb_payload)  # Convert it to DICT for easy handeling
 
             # Add the metrics [TYPE_value] field into [value] field for convenience
             if "metrics" in payload.keys():
@@ -129,7 +135,8 @@ class MqttSpbPayload:
                 self.payload = _payload
                 return self.payload
 
-            logger.error("Could not parse MQTT CMD payload, message ignored ! (reason: %s)" % (str(e)))
+            logger.error("Could not parse MQTT CMD payload, message ignored! (reason: %s)" % (str(e)))
+            traceback.print_exc()
             print(payload_data.decode())
             return None
 
@@ -146,7 +153,7 @@ class MqttSpbEntity:
                  entity_is_scada=False,
                  edge_node_w_devices = False):
         
-        self.edgewdevices = edge_node_w_devices
+        self.enodewdev = edge_node_w_devices
         
         # Enable / disable the class logger messages
         if debug_info:
@@ -359,7 +366,7 @@ class MqttSpbEntity:
             return
 
         # Publish BIRTH message
-        if self.edgewdevices:
+        if self.enodewdev:
             payload_bytes = self.serialize_payload_birth()
             if self._spb_eon_device_name is None:  # EoN
                 topic = "spBv1.0/" + self.spb_group_name + "/NBIRTH/" + self._spb_eon_name
@@ -598,7 +605,7 @@ class MqttSpbEntity:
 
         # Parse the received ProtoBUF data ------------------------------------------------
         payload = MqttSpbPayload().parse_payload(msg.payload)
-
+        logger.info(payload)
         # Add the timestamp when the message was received
         payload['timestamp_rx'] = msg_ts_rx
 
@@ -630,7 +637,7 @@ class MqttSpbEntity:
                         removed.append(item['name'])
 
                     # Check if the datatypes match, otherwise ignore the command
-                    elif not isinstance(item['value'], type(self.commands.get_value(item['name']))):
+                    elif not isinstance(item['value'], type(self.commands.get_value(item['name']))):                        
                         logger.warning("%s - Incorrect CMD datatype: %s - CMD will be ignored" % (
                             self._entity_domain, item['name']))
                         removed.append(item['name'])
@@ -798,7 +805,7 @@ class MqttSpbEntityEdgeNodeWithDevices(MqttSpbEntity):
     def __init__(self, spb_group_name, spb_eon_name, debug_info=False, edge_node_w_devices=True):
 
         # Initialized the object ( parent class ) with Device_id as None - Configuring it as edge node
-        super().__init__(spb_group_name, spb_eon_name, None, debug_info)
+        super().__init__(spb_group_name, spb_eon_name, None, debug_info, edge_node_w_devices=True)
         self.devices = []
         self.edgenode = MqttSpbEntityEdgeNode(spb_group_name,
                                spb_eon_name,
