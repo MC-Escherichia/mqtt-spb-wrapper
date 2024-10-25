@@ -9,5 +9,6 @@ from .mqtt_spb_wrapper import MqttSpbEntityEdgeNode
 from .mqtt_spb_wrapper import MqttSpbEntityScada
 from .mqtt_spb_wrapper import MqttSpbEntityApplication
 from .mqtt_spb_wrapper import MqttSpbEntityEdgeNodeWithDevices
+from .spb_core import MetricDataType
 
 

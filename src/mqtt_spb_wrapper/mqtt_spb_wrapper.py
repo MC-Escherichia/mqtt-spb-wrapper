@@ -106,8 +106,8 @@ class MqttSpbPayload:
         pb_payload = Payload()
 
         try:
-            logger.info(payload_data)
-            logger.info(len(payload_data))
+            # logger.info(payload_data)
+            # logger.info(len(payload_data))
             try: #tests if the payload is a encoded json rather than encoded string
                 payload = json.loads(payload_data)
             except:
@@ -605,7 +605,7 @@ class MqttSpbEntity:
 
         # Parse the received ProtoBUF data ------------------------------------------------
         payload = MqttSpbPayload().parse_payload(msg.payload)
-        logger.info(payload)
+        # logger.info(payload)
         # Add the timestamp when the message was received
         payload['timestamp_rx'] = msg_ts_rx
 
@@ -973,7 +973,7 @@ class MqttSpbEntityEdgeNodeWithDevices(MqttSpbEntity):
     
     def publish_all_births(self):
         self.edgenode.publish_birth()
-        time.sleep(.1)
+        time.sleep(.5)
         for device in self.devices:
             device.publish_birth()
         
@@ -1054,8 +1054,8 @@ class MqttSpbEntityApplication(MqttSpbEntityDevice):
 
 class MqttSpbEntityScada(MqttSpbEntity):
 
-    def __init__(self, spb_group_name, spb_scada_name, debug_info=False):
-
+    def __init__(self, spb_group_name, spb_scada_name, debug_info=False, publish_only = False):
+        self.pub_only = publish_only
         # Initialized the object ( parent class ) with Device_id as None - Configuring it as edge node
         super().__init__(spb_group_name, spb_scada_name, None,
                          debug_info=debug_info,
@@ -1071,7 +1071,8 @@ class MqttSpbEntityScada(MqttSpbEntity):
         # Subscribe to all group topics
         if rc == 0:
             topic = "spBv1.0/" + self.spb_group_name + "/#"
-            self._mqtt.subscribe(topic)
+            if not self.pub_only:
+                self._mqtt.subscribe(topic)
             logger.info("%s - Subscribed to MQTT topic: %s" % (self._entity_domain, topic))
 
     def publish_command_edge_node(self, spb_eon_name, commands):
@@ -1091,6 +1092,7 @@ class MqttSpbEntityScada(MqttSpbEntity):
 
         # Add the list of commands to the payload metrics
         for k in commands:
+            logger.info(commands[k])
             addMetric(payload, k, None, self._spb_data_type(commands[k]), commands[k])
 
         # Send payload if there is new data

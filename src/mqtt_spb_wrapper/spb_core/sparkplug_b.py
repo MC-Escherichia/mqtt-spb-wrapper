@@ -371,32 +371,32 @@ def addNullMetric(container, name, alias, type):
         metric.datatype = MetricDataType.File
     elif type == MetricDataType.Template:
         metric.datatype = MetricDataType.Template
-    elif type == MetricDataType.Int8Array:
-        metric.datatype = MetricDataType.Int8Array
-    elif type == MetricDataType.Int16Array:
-        metric.datatype = MetricDataType.Int16Array
-    elif type == MetricDataType.Int32Array:
-        metric.datatype = MetricDataType.Int32Array
-    elif type == MetricDataType.Int64Array:
-        metric.datatype = MetricDataType.Int64Array
-    elif type == MetricDataType.UInt8Array:
-        metric.datatype = MetricDataType.UInt8Array
-    elif type == MetricDataType.UInt16Array:
-        metric.datatype = MetricDataType.UInt16Array
-    elif type == MetricDataType.UInt32Array:
-        metric.datatype = MetricDataType.UInt32Array
-    elif type == MetricDataType.UInt64Array:
-        metric.datatype = MetricDataType.UInt64Array
-    elif type == MetricDataType.FloatArray:
-        metric.datatype = MetricDataType.FloatArray
-    elif type == MetricDataType.DoubleArray:
-        metric.datatype = MetricDataType.DoubleArray
-    elif type == MetricDataType.BooleanArray:
-        metric.datatype = MetricDataType.BooleanArray
-    elif type == MetricDataType.StringArray:
-        metric.datatype = MetricDataType.StringArray
-    elif type == MetricDataType.DateTimeArray:
-        metric.datatype = MetricDataType.DateTimeArray
+    # elif type == MetricDataType.Int8Array:
+    #     metric.datatype = MetricDataType.Int8Array
+    # elif type == MetricDataType.Int16Array:
+    #     metric.datatype = MetricDataType.Int16Array
+    # elif type == MetricDataType.Int32Array:
+    #     metric.datatype = MetricDataType.Int32Array
+    # elif type == MetricDataType.Int64Array:
+    #     metric.datatype = MetricDataType.Int64Array
+    # elif type == MetricDataType.UInt8Array:
+    #     metric.datatype = MetricDataType.UInt8Array
+    # elif type == MetricDataType.UInt16Array:
+    #     metric.datatype = MetricDataType.UInt16Array
+    # elif type == MetricDataType.UInt32Array:
+    #     metric.datatype = MetricDataType.UInt32Array
+    # elif type == MetricDataType.UInt64Array:
+    #     metric.datatype = MetricDataType.UInt64Array
+    # elif type == MetricDataType.FloatArray:
+    #     metric.datatype = MetricDataType.FloatArray
+    # elif type == MetricDataType.DoubleArray:
+    #     metric.datatype = MetricDataType.DoubleArray
+    # elif type == MetricDataType.BooleanArray:
+    #     metric.datatype = MetricDataType.BooleanArray
+    # elif type == MetricDataType.StringArray:
+    #     metric.datatype = MetricDataType.StringArray
+    # elif type == MetricDataType.DateTimeArray:
+    #     metric.datatype = MetricDataType.DateTimeArray
     else:
         print( "Invalid: " + str(type))
 
@@ -431,3 +431,79 @@ def getBdSeqNum(reset = False):
         bdSeq = 0
     return retVal
 ######################################################################
+
+
+def addMetricDataset_from_dict(payload, name, alias, data):
+    """
+    Converts a dictionary into a Sparkplug B dataset metric.
+
+    Args:
+        payload (Payload): The payload to add the dataset metric to.
+        name (str): The name of the dataset metric.
+        alias (int): The alias for the metric.
+        data (dict): The dictionary containing columns as keys and lists of values.
+
+    Returns:
+        The initialized dataset metric.
+
+    Example:
+
+        # Sample dictionary data
+        data = {
+            "Temperature": [23.5, 22.0, 21.8],
+            "Humidity": [60.2, 58.9, 59.5],
+            "Status": ["Normal", "Warning", "Alert"]
+        }
+
+        # Create a new Sparkplug B payload
+        payload = Payload()
+
+        # Convert the dictionary into a dataset metric
+        dict_to_dataset_metric(payload, "environmental_data", 1, data)
+
+    """
+    
+    # Extract columns and data types
+    columns = list(data.keys())
+
+    # Check for consistent column dimensions
+    lengths = [len(v) for v in data.values()]
+    if len(set(lengths)) > 1:
+        raise ValueError(f"All columns must have the same number of rows, but got lengths: {lengths}")
+
+    # Determine types based on the first row's types.
+    first_row = [v[0] for v in data.values()]
+    types = []
+    for value in first_row:
+        if isinstance(value, int):
+            types.append(DataSetDataType.Int32)
+        elif isinstance(value, float):
+            types.append(DataSetDataType.Float)
+        elif isinstance(value, str):
+            types.append(DataSetDataType.String)
+        else:
+            raise ValueError(f"Unsupported data type: {type(value)}")
+
+    # Initialize the dataset metric using the provided function
+    dataset = initDatasetMetric(payload, name, alias, columns, types)
+
+    # Get the number of rows from the data values
+    num_rows = lengths[0]
+
+    # Add rows to the dataset
+    for i in range(num_rows):
+        dataset_row = dataset.rows.add()
+        for col in columns:
+            element = dataset_row.elements.add()
+            value = data[col][i]
+            # Add the value based on its type
+            if isinstance(value, int):
+                element.int_value = value
+            elif isinstance(value, float):
+                element.float_value = value
+            elif isinstance(value, str):
+                element.string_value = value
+            else:
+                raise ValueError(f"Unsupported value type: {type(value)}")
+
+    return dataset
