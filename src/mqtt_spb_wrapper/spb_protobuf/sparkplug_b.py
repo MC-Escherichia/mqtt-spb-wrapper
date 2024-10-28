@@ -13,8 +13,8 @@
 import time
 from .sparkplug_b_pb2 import Payload
 
-seqNum = 0
-bdSeq = 0
+seqNums = { "": 0 }
+bdSeqs = { "": 0 }
 
 class DataSetDataType:
     Unknown = 0
@@ -76,9 +76,9 @@ class ParameterDataType:
 ######################################################################
 # Always request this before requesting the Node Birth Payload
 ######################################################################
-def getNodeDeathPayload():
-    payload = Payload()
-    addMetric(payload, "bdSeq", None, MetricDataType.Int64, getBdSeqNum())
+def getNodeDeathPayload(eon=""):
+    payload = Payload(eon)
+    addMetric(payload, "bdSeq", None, MetricDataType.Int64, getBdSeqNum(eon))
     return payload
 ######################################################################
 
@@ -86,23 +86,26 @@ def getNodeDeathPayload():
 ######################################################################
 # Always request this after requesting the Node Death Payload
 ######################################################################
-def getNodeBirthPayload():
-    global seqNum
+def getNodeBirthPayload(eon=""):
+    global seqNums
+    global bdSeqs
+    seqNums[eon] = 0
     seqNum = 0
-    payload = Payload()
+    payload = Payload(eon)
     payload.timestamp = int(round(time.time() * 1000))
-    payload.seq = getSeqNum()
-    addMetric(payload, "bdSeq", None, MetricDataType.Int64, --bdSeq)
+    payload.seq = getSeqNum(eon)
+    bdSeqs[eon] = 0
+    addMetric(payload, "bdSeq", None, MetricDataType.Int64, bdSeqs[eon])
     return payload
 ######################################################################
 
 ######################################################################
 # Get the DBIRTH payload
 ######################################################################
-def getDeviceBirthPayload():
-    payload = Payload()
+def getDeviceBirthPayload(eon=""):
+    payload = Payload(eon)
     payload.timestamp = int(round(time.time() * 1000))
-    payload.seq = getSeqNum()
+    payload.seq = getSeqNum(eon)
     return payload
 ######################################################################
 
@@ -110,8 +113,8 @@ def getDeviceBirthPayload():
 ######################################################################
 # Get a DDATA payload
 ######################################################################
-def getDdataPayload():
-    return getDeviceBirthPayload()
+def getDdataPayload(eon=""):
+    return getDeviceBirthPayload(eon)
 ######################################################################
 
 
@@ -323,13 +326,17 @@ def addNullMetric(container, name, alias, type):
 ######################################################################
 # Helper method for getting the next sequence number
 ######################################################################
-def getSeqNum():
-    global seqNum
-    retVal = seqNum
+def getSeqNum(eon=""):
+    global seqNums
+    if eon not in seqNums.keys():
+        seqNums[eon] = 0
+
+    retVal = seqNums[eon]
+
     # print("seqNum: " + str(retVal))
-    seqNum += 1
-    if seqNum == 256:
-        seqNum = 0
+    seqNums[eon] += 1
+    if seqNum[eon] == 256:
+        seqNum[eon] = 0
     return retVal
 ######################################################################
 
@@ -337,13 +344,15 @@ def getSeqNum():
 ######################################################################
 # Helper method for getting the next birth/death sequence number
 ######################################################################
-def getBdSeqNum():
-    global bdSeq
-    retVal = bdSeq
+def getBdSeqNum(eon=""):
+    global bdSeqs
+    if eon not in bdSeqs.keys():
+        bdSeqs[eon] = 0
+    retVal = bdSeqs[eon]
     # print("bdSeqNum: " + str(retVal))
-    bdSeq += 1
-    if bdSeq == 256:
-        bdSeq = 0
+    bdSeqs[eon] += 1
+    if bdSeqs[eon] == 256:
+        bdSeqs[eon] = 0
     return retVal
 ######################################################################
 
@@ -377,7 +386,7 @@ def addMetricDataset_from_dict(payload, name, alias, data):
         dict_to_dataset_metric(payload, "environmental_data", 1, data)
 
     """
-    
+
     # Extract columns and data types
     columns = list(data.keys())
 
@@ -422,4 +431,3 @@ def addMetricDataset_from_dict(payload, name, alias, data):
                 raise ValueError(f"Unsupported value type: {type(value)}")
 
     return dataset
-
