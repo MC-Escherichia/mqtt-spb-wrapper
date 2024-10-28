@@ -360,32 +360,32 @@ def addNullMetric(container, name, alias, type):
         metric.datatype = MetricDataType.File
     elif type == MetricDataType.Template:
         metric.datatype = MetricDataType.Template
-    elif type == MetricDataType.Int8Array:
-        metric.datatype = MetricDataType.Int8Array
-    elif type == MetricDataType.Int16Array:
-        metric.datatype = MetricDataType.Int16Array
-    elif type == MetricDataType.Int32Array:
-        metric.datatype = MetricDataType.Int32Array
-    elif type == MetricDataType.Int64Array:
-        metric.datatype = MetricDataType.Int64Array
-    elif type == MetricDataType.UInt8Array:
-        metric.datatype = MetricDataType.UInt8Array
-    elif type == MetricDataType.UInt16Array:
-        metric.datatype = MetricDataType.UInt16Array
-    elif type == MetricDataType.UInt32Array:
-        metric.datatype = MetricDataType.UInt32Array
-    elif type == MetricDataType.UInt64Array:
-        metric.datatype = MetricDataType.UInt64Array
-    elif type == MetricDataType.FloatArray:
-        metric.datatype = MetricDataType.FloatArray
-    elif type == MetricDataType.DoubleArray:
-        metric.datatype = MetricDataType.DoubleArray
-    elif type == MetricDataType.BooleanArray:
-        metric.datatype = MetricDataType.BooleanArray
-    elif type == MetricDataType.StringArray:
-        metric.datatype = MetricDataType.StringArray
-    elif type == MetricDataType.DateTimeArray:
-        metric.datatype = MetricDataType.DateTimeArray
+    # elif type == MetricDataType.Int8Array:
+    #     metric.datatype = MetricDataType.Int8Array
+    # elif type == MetricDataType.Int16Array:
+    #     metric.datatype = MetricDataType.Int16Array
+    # elif type == MetricDataType.Int32Array:
+    #     metric.datatype = MetricDataType.Int32Array
+    # elif type == MetricDataType.Int64Array:
+    #     metric.datatype = MetricDataType.Int64Array
+    # elif type == MetricDataType.UInt8Array:
+    #     metric.datatype = MetricDataType.UInt8Array
+    # elif type == MetricDataType.UInt16Array:
+    #     metric.datatype = MetricDataType.UInt16Array
+    # elif type == MetricDataType.UInt32Array:
+    #     metric.datatype = MetricDataType.UInt32Array
+    # elif type == MetricDataType.UInt64Array:
+    #     metric.datatype = MetricDataType.UInt64Array
+    # elif type == MetricDataType.FloatArray:
+    #     metric.datatype = MetricDataType.FloatArray
+    # elif type == MetricDataType.DoubleArray:
+    #     metric.datatype = MetricDataType.DoubleArray
+    # elif type == MetricDataType.BooleanArray:
+    #     metric.datatype = MetricDataType.BooleanArray
+    # elif type == MetricDataType.StringArray:
+    #     metric.datatype = MetricDataType.StringArray
+    # elif type == MetricDataType.DateTimeArray:
+    #     metric.datatype = MetricDataType.DateTimeArray
     else:
         print( "Invalid: " + str(type))
 
@@ -453,7 +453,11 @@ def addMetricDataset_from_dict(payload, name, alias, data):
         dict_to_dataset_metric(payload, "environmental_data", 1, data)
 
     """
+<<<<<<< HEAD:src/mqtt_spb_wrapper/spb_protobuf/sparkplug_b.py
 
+=======
+    
+>>>>>>> 7035778 (update: adding in current changes to mqtt-spb-wrapper. fixed issue where int arrays caused exceptions):src/mqtt_spb_wrapper/spb_core/sparkplug_b.py
     # Extract columns and data types
     columns = list(data.keys())
 
@@ -467,7 +471,11 @@ def addMetricDataset_from_dict(payload, name, alias, data):
     types = []
     for value in first_row:
         if isinstance(value, int):
+<<<<<<< HEAD:src/mqtt_spb_wrapper/spb_protobuf/sparkplug_b.py
             types.append(DataSetDataType.Int64)
+=======
+            types.append(DataSetDataType.Int32)
+>>>>>>> 7035778 (update: adding in current changes to mqtt-spb-wrapper. fixed issue where int arrays caused exceptions):src/mqtt_spb_wrapper/spb_core/sparkplug_b.py
         elif isinstance(value, float):
             types.append(DataSetDataType.Float)
         elif isinstance(value, str):
@@ -489,7 +497,11 @@ def addMetricDataset_from_dict(payload, name, alias, data):
             value = data[col][i]
             # Add the value based on its type
             if isinstance(value, int):
+<<<<<<< HEAD:src/mqtt_spb_wrapper/spb_protobuf/sparkplug_b.py
                 element.long_value = value
+=======
+                element.int_value = value
+>>>>>>> 7035778 (update: adding in current changes to mqtt-spb-wrapper. fixed issue where int arrays caused exceptions):src/mqtt_spb_wrapper/spb_core/sparkplug_b.py
             elif isinstance(value, float):
                 element.float_value = value
             elif isinstance(value, str):
@@ -497,4 +509,8 @@ def addMetricDataset_from_dict(payload, name, alias, data):
             else:
                 raise ValueError(f"Unsupported value type: {type(value)}")
 
+<<<<<<< HEAD:src/mqtt_spb_wrapper/spb_protobuf/sparkplug_b.py
     return dataset
+=======
+    return dataset
+>>>>>>> 7035778 (update: adding in current changes to mqtt-spb-wrapper. fixed issue where int arrays caused exceptions):src/mqtt_spb_wrapper/spb_core/sparkplug_b.py
