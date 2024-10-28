@@ -81,7 +81,7 @@ class ParameterDataType:
 ######################################################################
 def getNodeDeathPayload():
     payload = sparkplug_b_pb2.Payload()
-    addMetric(payload, "bdSeq", None, MetricDataType.Int64, getBdSeqNum())
+    addMetric(payload, "bdSeq", None, MetricDataType.Int32, getBdSeqNum())
     return payload
 ######################################################################
 
@@ -95,7 +95,7 @@ def getNodeBirthPayload():
     payload = sparkplug_b_pb2.Payload()
     payload.timestamp = int(round(time.time() * 1000))
     payload.seq = getSeqNum()
-    addMetric(payload, "bdSeq", None, MetricDataType.Int64, bdSeq - 1)
+    addMetric(payload, "bdSeq", None, MetricDataType.Int32, bdSeq - 1)
     return payload
 ######################################################################
 
