@@ -1093,9 +1093,19 @@ class SpbPayloadParser:
             payload = MessageToDict(pb_payload)
 
             if "metrics" in payload:
+
                 for metric in payload["metrics"]:
+
+                    # Parse properties
+                    if "properties" in metric:
+                        metric["properties"]["key_value"] = self._decode_metric_property_values(metric)  # parse and decode the properties
+
                     # Extract a common value field for convenience
-                    metric["value"] = self._decode_metric_value(metric)
+                    value = self._decode_metric_value(metric)
+                    if value is None:   # If no value, skip this metric
+                        continue
+
+                    metric["value"] = value
 
                     # Force alias to int if present
                     if "alias" in metric:
@@ -1131,6 +1141,48 @@ class SpbPayloadParser:
 
         if datatype is None or raw_val is None:
             return None
+
+        # Parse the data value based on datatype
+        return self._decode_value(datatype, raw_val)
+
+    def _decode_metric_property_values(self, metric):
+        """
+        Decode and detect the metric properties and parse the actual value based on datatype and raw fields
+        """
+
+        if "properties" not in metric:  # There must be a properties field
+            return {}
+
+        keys = metric["properties"].get("keys", {})
+        values = metric["properties"].get("values", {})
+
+        if len(keys) != len(values):    # Sizes must be the same
+            return {}
+
+        property_values = {}    # To store the results
+
+        # Iterate over the properties
+        for index in range(len(keys)):
+
+            # Extract fields
+            name = keys[index]
+            datatype = values[index].get("type", None)
+            value_field = next((k for k in values[index] if k.endswith("Value")), None)
+
+            if not value_field or not datatype: # Nothing to decode
+                continue    # Skip this property
+
+            raw_val = values[index].get(value_field, None)    # Get the actual value
+
+            if raw_val is None:
+                continue    # Skip this property
+
+            # Parse the data value based on datatype
+            property_values[name] = self._decode_value(datatype, raw_val)
+
+        return property_values  # Return the result
+
+    def _decode_value(self, datatype, raw_val):
 
         # Numeric types
         if datatype in [MetricDataType.Float, MetricDataType.Double]:
